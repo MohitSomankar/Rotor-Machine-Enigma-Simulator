@@ -91,8 +91,28 @@ navItems.forEach((btn) => {
     navItems.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     views.forEach((v) => v.classList.toggle("active", v.id === `view-${target}`));
+    closeSidebar(); // on mobile, picking a page should close the drawer
   });
 });
+
+// ============ MOBILE SIDEBAR (hamburger drawer) ============
+const sidebarEl = document.getElementById("sidebar");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const menuToggle = document.getElementById("menuToggle");
+const sidebarClose = document.getElementById("sidebarClose");
+
+function openSidebar() {
+  sidebarEl.classList.add("open");
+  sidebarBackdrop.classList.add("open");
+}
+function closeSidebar() {
+  sidebarEl.classList.remove("open");
+  sidebarBackdrop.classList.remove("open");
+}
+
+menuToggle.addEventListener("click", openSidebar);
+sidebarClose.addEventListener("click", closeSidebar);
+sidebarBackdrop.addEventListener("click", closeSidebar);
 
 // ============ LAMPBOARD ============
 const LAMP_ROWS = ["ABCDEFGHIJKLM", "NOPQRSTUVWXYZ"];
