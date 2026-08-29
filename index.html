@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Secure Enigma — Machine Simulator</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0b0e12" />
+<link rel="icon" href="assets/icon-192.png" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Secure Enigma" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ================= ACCESS CODE LOCK SCREEN ================= -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-box">
+    <div class="lock-icon">◈</div>
+    <div class="lock-title">SECURE ENIGMA</div>
+    <div class="lock-sub">Enter the shared access code to continue</div>
+    <input type="password" id="lockInput" maxlength="12" placeholder="Access Code" autocomplete="off" />
+    <button id="lockSubmit">UNLOCK</button>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <div class="brand-text">ENIGMA MACHINE<br><span>SIMULATOR</span></div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">⌂</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="configuration">
+        <span class="nav-icon">⚙</span> Configuration
+      </button>
+      <button class="nav-item" data-view="encryption">
+        <span class="nav-icon">🔒</span> Encryption
+      </button>
+      <button class="nav-item" data-view="inbox">
+        <span class="nav-icon">✉</span> Encrypted Inbox
+        <span class="badge" id="inboxBadge">0</span>
+      </button>
+      <button class="nav-item" data-view="history">
+        <span class="nav-icon">◷</span> History
+      </button>
+      <button class="nav-item" data-view="about">
+        <span class="nav-icon">ⓘ</span> About Enigma
+      </button>
+    </nav>
+
+    <div class="system-info">
+      <div class="system-info-title">SYSTEM INFO</div>
+      <div class="info-row"><span>Machine:</span><b>Enigma M3</b></div>
+      <div class="info-row"><span>Rotors:</span><b id="infoRotors">I - II - III</b></div>
+      <div class="info-row"><span>Ring:</span><b id="infoRing">A - A - A</b></div>
+      <div class="info-row"><span>Position:</span><b id="infoPosition">C - M - R</b></div>
+      <div class="info-row"><span>Plugboard:</span><b id="infoPlugboard">0 Pairs</b></div>
+      <div class="info-row"><span>Reflector:</span><b>B</b></div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span>System Status: <b id="statusText" class="status-ok">Ready</b></span>
+        <!-- <span class="divider">|</span> -->
+        <!-- <span>Daily Key: <b>22-08-2026</b></span> -->
+      </div>
+      <div class="topbar-right">
+        <span class="operator">Operator<br><b class="online">● Local Mode</b></span>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ============ VIEW: DASHBOARD ============ -->
+      <div class="view active" id="view-dashboard">
+        <section class="machine-panel">
+          <div class="lampboard-label">Lampboard</div>
+          <div class="lampboard" id="lampboard"></div>
+
+          <div class="rotor-bay" id="rotorBay"></div>
+
+          <div class="plugboard-label">Plugboard <span id="plugPairCount">(0 pairs)</span></div>
+          <div class="plugboard" id="plugboardVisual"></div>
+
+          <div class="keyboard-label">Keyboard <span class="hint">(type on this page, or use your real keyboard — Enter sends to Encryption)</span></div>
+          <div class="typed-buffer" id="typedBuffer"><span class="placeholder">TYPE SOMETHING…</span></div>
+          <div class="keyboard" id="keyboard"></div>
+        </section>
+      </div>
+
+      <!-- ============ VIEW: CONFIGURATION ============ -->
+      <div class="view" id="view-configuration">
+        <div class="card wide">
+          <div class="card-title">YOUR IDENTITY</div>
+          <label class="field-label">Your Name <span class="hint">(so incoming messages know it's for you)</span></label>
+          <input type="text" id="yourNameInput" placeholder="e.g. Mohit" />
+          <label class="checkbox-row"><input type="checkbox" id="soundToggle" checked /> Play sound on new incoming message</label>
+          <div class="config-note" id="cloudStatusNote">Connecting to cloud sync…</div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-title">ROTOR CONFIGURATION</div>
+
+          <div class="field-label">Rotor Selection <span class="hint">(pick 3, left → right)</span></div>
+          <div class="rotor-select" id="rotorSelect">
+            <button data-rotor="I">I</button>
+            <button data-rotor="II">II</button>
+            <button data-rotor="III">III</button>
+            <button data-rotor="IV">IV</button>
+            <button data-rotor="V">V</button>
+          </div>
+
+          <div class="field-label">Ring Settings</div>
+          <div class="triple-row" id="ringSettings"></div>
+
+          <div class="field-label">Initial Positions</div>
+          <div class="triple-row" id="initialPositions"></div>
+
+          <div class="field-label">Plugboard Pairs <span class="hint">(e.g. AB, then CD, ...)</span></div>
+          <div class="plug-input-row">
+            <input type="text" id="plugInput" maxlength="2" placeholder="AB" />
+            <button id="addPlugBtn">Add</button>
+            <button id="clearPlugsBtn" class="ghost">Clear</button>
+          </div>
+          <div class="plugboard" id="plugboardVisualConfig" style="margin-top:10px;"></div>
+
+          <div class="config-note">
+            This is the <b>Daily Key</b> — both laptops must set the exact same Rotor Selection, Ring Settings, Initial Positions and Plugboard Pairs before a message can be decrypted correctly.
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ VIEW: ENCRYPTION (Message Center) ============ -->
+      <div class="view" id="view-encryption">
+        <div class="card wide">
+          <div class="card-title">MESSAGE CENTER</div>
+
+          <label class="field-label">Plaintext</label>
+          <textarea id="plaintext" rows="3" placeholder="HELLO, HOW ARE YOU?"></textarea>
+
+          <label class="field-label">Ciphertext</label>
+          <textarea id="ciphertext" rows="3" placeholder="ILBDA IXBWT ACPJ"></textarea>
+
+          <div class="button-row">
+            <button class="primary" id="encryptBtn">ENCRYPT / DECRYPT</button>
+            <button class="ghost" id="clearBtn">CLEAR</button>
+          </div>
+
+          <label class="field-label">Send To <span class="hint">(recipient's name, as they set it in their Configuration)</span></label>
+          <input type="text" id="recipientInput" placeholder="Partner's name" value="Partner" />
+
+          <div class="button-row">
+            <button class="primary alt" id="sendBtn">SEND MESSAGE</button>
+            <button class="primary alt" id="resetMachineBtn">RESET MACHINE</button>
+          </div>
+          <div class="send-status" id="sendStatus"></div>
+          <div class="key-hint" id="keyHint"></div>
+        </div>
+      </div>
+
+      <!-- ============ VIEW: INBOX ============ -->
+      <div class="view" id="view-inbox">
+        <div class="card wide">
+          <div class="card-title">ENCRYPTED INBOX</div>
+          <span class="local-tag" id="inboxSyncTag">Live cloud sync — messages from both laptops appear here in real time.</span>
+          <div id="inboxList" class="inbox-list wide-list"></div>
+          <div class="button-row">
+            <button class="ghost" id="clearInboxBtn">CLEAR MY MESSAGES</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ VIEW: HISTORY ============ -->
+      <div class="view" id="view-history">
+        <div class="card wide">
+          <div class="card-title">ACTIVITY HISTORY</div>
+          <div id="historyList" class="inbox-list wide-list"></div>
+        </div>
+      </div>
+
+      <!-- ============ VIEW: ABOUT ============ -->
+      <div class="view" id="view-about">
+        <div class="card wide about-card">
+          <div class="card-title">ABOUT ENIGMA</div>
+          <p>The Enigma machine was an electro-mechanical rotor cipher device used by the German military in World War II to encrypt and decrypt secret messages. Each keypress routed an electrical signal through a plugboard, three rotating rotors, and a reflector — producing a different substitution cipher letter every single time, because the rotors physically stepped forward after every key.</p>
+          <p>This simulator reproduces the real Enigma M3 wiring: rotors I–V with their historical wirings and turnover notches, Reflector B, a 10-pair plugboard, and the famous <b>double-stepping anomaly</b> — a mechanical quirk where the middle rotor sometimes steps twice in a row.</p>
+          <p>Because Enigma is self-reciprocal, the exact same settings that encrypt a message will also decrypt it — which is why both operators (or laptops, in this project) must agree on the same Rotor Selection, Ring Settings, Initial Positions and Plugboard Pairs — the "Daily Key" — before exchanging messages.</p>
+          <p class="dim">Built by Mohit · Secure Enigma Communication System</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="js/rotor.js"></script>
+<script src="js/reflector.js"></script>
+<script src="js/plugboard.js"></script>
+<script src="js/enigma.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/firebase.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch((err) => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
