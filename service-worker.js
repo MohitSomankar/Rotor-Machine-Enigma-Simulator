@@ -3,7 +3,7 @@
 // so we deliberately do NOT touch network requests going to Google's CDN
 // or Firestore — only our own local files are cached.
 
-const CACHE_NAME = "secure-enigma-v1";
+const CACHE_NAME = "secure-enigma-v2";
 
 const PRECACHE_URLS = [
   "./",
