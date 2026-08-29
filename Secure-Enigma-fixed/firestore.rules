@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // "messages" is the only collection this app uses.
+    // Access is scoped to documents whose "pin" field matches the shared
+    // access code baked into js/app.js (ACCESS_CODE). This is NOT strong
+    // security — the code lives in client-side JS, so anyone who reads the
+    // page source can see it — but it stops the "public, anyone can steal,
+    // modify or delete data" warning Firebase shows for wide-open rules,
+    // and it blocks casual/automated scraping of your Firestore project.
+    match /messages/{messageId} {
+
+      // Reads (including the live "list" query in firebase.js) are only
+      // allowed when the query itself filters on the matching pin — see
+      // the where("pin", "==", ...) clause in subscribeToMessages().
+      allow read: if resource.data.pin == "2604";
+
+      // New messages must include the correct pin and the fields the app
+      // actually writes, with a sane size cap on the message text.
+      allow create: if request.resource.data.pin == "2604"
+                    && request.resource.data.keys().hasAll(["from", "to", "text", "pin", "clientTime"])
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() < 5000;
+
+      // Deletes (used by "clear my messages") also require the right pin.
+      allow delete: if resource.data.pin == "2604";
+
+      // No edits after the fact.
+      allow update: if false;
+    }
+
+    // Everything else stays locked.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
